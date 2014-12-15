@@ -1,0 +1,9 @@
+DigitalOcean IP Updater
+===
+This script is designed to fetch your current public IP address using ipinfo.io and compare it to the current IP address on one of your DigitalOcean domain accounts. This script can easily be dropped into a cron folder and left to run automatically. There are some variables at the top that need to be adjusted:
+
+**AUTH_TOKEN**: This should be set to your OAuth API token for DigitalOcea. You can generate a token here: https://cloud.digitalocean.com/settings/applications  
+**DNS_NAME**: This is the name of the DNS record you want to update the IP address for. This is usually the same name that the DNS entries are grouped under on this page: https://cloud.digitalocean.com/domains  
+**RECORD_ID**: This is the ID of the record you want to adjust. You need to perform a network request against the DigitalOcean API to get this information. More details can be seen here: https://developers.digitalocean.com/#list-all-domain-records  
+
+This script was very quickly thrown together and has very little error handling. Feel free to update it as you see fit!
