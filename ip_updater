@@ -1,0 +1,43 @@
+#!/bin/bash
+#
+# Updates DNS entry when public IP address changes
+#
+
+LOG_FILE=/var/log/ip_updater.log
+AUTH_TOKEN=1234567890 # Generate an authentication token on the API page of your DigitalOcean account.
+DNS_NAME=example.com # Put DNS name here. This name is the name that shows up under Domains on the DNS tab of your DigitalOcean account
+RECORD_ID=12345678 # You'll need the record ID you want to update. The easiest way to get this is is to curl the domains page, and it will return the code. For more information, see the API documentation here: https://developers.digitalocean.com/#list-all-domain-records
+
+DNS_IP=0.0.0.0
+STATUS_CODE=0
+
+echo "\n******************************"
+echo "$(date): Starting script" >> $LOG_FILE
+echo "$(date): Getting current IP address" >> $LOG_FILE
+CURRENT_IP=$(curl ipinfo.io/ip | tr -d '\n')
+
+echo "$(date): Current IP address is $CURRENT_IP" >> $LOG_FILE
+
+echo "$(date): Checking IP address of $DNS_NAME" >> $LOG_FILE
+DNS_IP=$(curl -X GET -H "Authorization: Bearer $AUTH_TOKEN" "https://api.digitalocean.com/v2/domains/$DNS_NAME/records/$RECORD_ID" | sed -e 's/^.*data\":\"\(.*\)\",\"priority.*/\1/')
+
+echo "$(date): IP address of $DNS_NAME is $DNS_IP" >> $LOG_FILE
+
+if [[ $DNS_IP == *"$CURRENT_IP"* ]]
+then
+	echo "$(date): No change in address needed, exiting" >> $LOG_FILE
+else
+	echo "$(date): Changing IP address to $CURRENT_IP" >> $LOG_FILE
+	CHANGE_RESULT=$(curl -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $AUTH_TOKEN" -d "{\"data\": \"$CURRENT_IP\"}" "https://api.digitalocean.com/v2/domains/$DNS_NAME/records/$RECORD_ID")
+
+	if [[ $CHANGE_RESULT != *"$CURRENT_IP"* ]]
+	then
+		STATUS_CODE=2
+		echo "$(date): Unable to update IP address\n\n$CHANGE_RESULT\n\n" >> $LOG_FILE
+	else
+		echo "$(date): IP address updated succesfully" >> $LOG_FILE
+	fi
+fi
+
+echo "******************************\n"
+return STATUS_CODE
