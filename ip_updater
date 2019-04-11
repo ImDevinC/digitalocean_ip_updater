@@ -11,15 +11,15 @@ RECORD_ID=12345678 # You'll need the record ID you want to update. The easiest w
 DNS_IP=0.0.0.0
 STATUS_CODE=0
 
-echo "\n******************************"
+echo "\n******************************" >> $LOG_FILE
 echo "$(date): Starting script" >> $LOG_FILE
 echo "$(date): Getting current IP address" >> $LOG_FILE
-CURRENT_IP=$(curl ipinfo.io/ip | tr -d '\n')
+CURRENT_IP=$(curl -s ipinfo.io/ip | tr -d '\n')
 
 echo "$(date): Current IP address is $CURRENT_IP" >> $LOG_FILE
 
 echo "$(date): Checking IP address of $DNS_NAME" >> $LOG_FILE
-DNS_IP=$(curl -X GET -H "Authorization: Bearer $AUTH_TOKEN" "https://api.digitalocean.com/v2/domains/$DNS_NAME/records/$RECORD_ID" | sed -e 's/^.*data\":\"\(.*\)\",\"priority.*/\1/')
+DNS_IP=$(curl -s -X GET -H "Authorization: Bearer $AUTH_TOKEN" "https://api.digitalocean.com/v2/domains/$DNS_NAME/records/$RECORD_ID" | sed -e 's/^.*data\":\"\(.*\)\",\"priority.*/\1/')
 
 echo "$(date): IP address of $DNS_NAME is $DNS_IP" >> $LOG_FILE
 
@@ -28,7 +28,7 @@ then
 	echo "$(date): No change in address needed, exiting" >> $LOG_FILE
 else
 	echo "$(date): Changing IP address to $CURRENT_IP" >> $LOG_FILE
-	CHANGE_RESULT=$(curl -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $AUTH_TOKEN" -d "{\"data\": \"$CURRENT_IP\"}" "https://api.digitalocean.com/v2/domains/$DNS_NAME/records/$RECORD_ID")
+	CHANGE_RESULT=$(curl -s -X PUT -H "Content-Type: application/json" -H "Authorization: Bearer $AUTH_TOKEN" -d "{\"data\": \"$CURRENT_IP\"}" "https://api.digitalocean.com/v2/domains/$DNS_NAME/records/$RECORD_ID")
 
 	if [[ $CHANGE_RESULT != *"$CURRENT_IP"* ]]
 	then
@@ -39,5 +39,10 @@ else
 	fi
 fi
 
-echo "******************************\n"
-return STATUS_CODE
+echo "******************************\n" >> $LOG_FILE
+if [[ -t 1 ]]
+then
+	echo $STATUS_CODE
+else
+	return $STATUS_CODE
+fi
